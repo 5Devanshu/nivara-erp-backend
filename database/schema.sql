@@ -167,15 +167,37 @@ CREATE TABLE project_expenses (
   id SERIAL PRIMARY KEY,
   project_id INTEGER NOT NULL,
   category_id INTEGER NOT NULL,
-  amount DECIMAL(15, 2),
-  vendor VARCHAR(255),
-  gst DECIMAL(5, 2) DEFAULT 0,
+  vendor_name VARCHAR(255),
   description TEXT,
+  invoice_number VARCHAR(100),
+  amount DECIMAL(15, 2),
+  gst_amount DECIMAL(15, 2) NOT NULL DEFAULT 0,
+  total_amount DECIMAL(15, 2),
+  paid_amount DECIMAL(15, 2) NOT NULL DEFAULT 0,
+  balance_payable DECIMAL(15, 2),
+  payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid',
+  payment_mode VARCHAR(20),
+  payment_reference VARCHAR(100),
+  remarks VARCHAR(500),
+  created_by INTEGER,
   expense_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-  FOREIGN KEY (category_id) REFERENCES expense_categories(id)
+  FOREIGN KEY (category_id) REFERENCES expense_categories(id),
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE expense_payments (
+  id SERIAL PRIMARY KEY,
+  expense_id INTEGER NOT NULL REFERENCES project_expenses(id) ON DELETE CASCADE,
+  payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  amount DECIMAL(15, 2) NOT NULL,
+  payment_mode VARCHAR(20),
+  payment_reference VARCHAR(100),
+  remarks VARCHAR(500),
+  paid_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Documents Table

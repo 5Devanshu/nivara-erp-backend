@@ -35,7 +35,7 @@ const deactivateCategory = async (id) => {
 // EXPENSES — GET ALL (filtered)
 // ══════════════════════════════════════════════════════════════
 
-const getAll = async ({ project_id, category_id, from_date, to_date, vendor } = {}) => {
+const getAll = async ({ project_id, category_id, payment_status, from_date, to_date, vendor_name } = {}) => {
   const conditions = [];
   const params     = [];
   let   i = 1;
@@ -44,7 +44,8 @@ const getAll = async ({ project_id, category_id, from_date, to_date, vendor } = 
   if (category_id)    { conditions.push(`e.category_id    = $${i++}`); params.push(category_id); }
   if (from_date)      { conditions.push(`e.expense_date  >= $${i++}`); params.push(from_date); }
   if (to_date)        { conditions.push(`e.expense_date  <= $${i++}`); params.push(to_date); }
-  if (vendor)         { conditions.push(`e.vendor ILIKE $${i++}`); params.push(`%${vendor}%`); }
+  if (payment_status) { conditions.push(`e.payment_status = $${i++}`); params.push(payment_status); }
+  if (vendor_name)    { conditions.push(`e.vendor_name ILIKE $${i++}`); params.push(`%${vendor_name}%`); }
 
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -82,8 +83,8 @@ const getSummary = async ({ project_id } = {}) => {
     `SELECT
        COUNT(*)                          AS total_entries,
        COALESCE(SUM(e.amount), 0)        AS total_expense,
-       COALESCE(SUM(e.gst), 0)           AS total_gst,
-       COALESCE(SUM(e.amount) + SUM(e.gst), 0) AS total_with_gst
+      COALESCE(SUM(e.gst_amount), 0)           AS total_gst,
+      COALESCE(SUM(e.amount) + SUM(e.gst_amount), 0) AS total_with_gst
      FROM project_expenses e
      ${where}`,
     params
@@ -95,7 +96,7 @@ const getSummary = async ({ project_id } = {}) => {
        ec.name                      AS category,
        COUNT(e.id)                  AS entry_count,
        COALESCE(SUM(e.amount), 0)   AS total_amount,
-       COALESCE(SUM(e.gst), 0)      AS total_gst
+           COALESCE(SUM(e.gst_amount), 0)      AS total_gst
      FROM project_expenses e
      JOIN expense_categories ec ON ec.id = e.category_id
      ${where}
@@ -112,7 +113,7 @@ const getSummary = async ({ project_id } = {}) => {
          p.name                    AS project_name,
          COUNT(e.id)               AS entry_count,
          COALESCE(SUM(e.amount), 0) AS total_amount,
-         COALESCE(SUM(e.gst), 0)   AS total_gst
+        COALESCE(SUM(e.gst_amount), 0)   AS total_gst
        FROM project_expenses e
        JOIN projects p ON p.id = e.project_id
        GROUP BY p.id, p.name
